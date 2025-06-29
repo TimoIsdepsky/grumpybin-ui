@@ -18,6 +18,16 @@
   </head>
   <body>
     <h1>GrumpyBin UI</h1>
+    <h2>Server: </h2>
+    <form id="server">
+      <label for="uri">URI:</label>
+      <input type="text" label="uri" id="uri" />
+      <label for="port">PORT:</label>
+      <input type="text" label="port" id="port" />
+      <button type="submit">Verbinden</button>
+    </form>
+    <p>Verbunden mit: </p>
+    <p id="status"></p>
     <h2>Gespeicherte Sätze</h2>
     <table id="sentenceTable">
       <thead>
@@ -43,7 +53,7 @@
       <label for="sentence">Bitte geben sie einen Satz ein</label>
       <input id="sentence" type="text" />
       <br>
-      <button id="submit" type="submi">Abschicken</button>
+      <button id="submit" type="submit">Abschicken</button>
     </form>
   </body>
 </html>

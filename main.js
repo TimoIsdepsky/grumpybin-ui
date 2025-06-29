@@ -3,6 +3,33 @@ const mqtt = require('mqtt')
 const { MessageMethod, MessageStatus, MessageType, Message } = require('./shared-model')
 
 let win
+let client = null;
+
+function connectMqtt(uri, port) {
+  if (client) {
+    try { client.end(); } catch {}
+  }
+  client = mqtt.connect(`mqtt://${uri}:${port}`);
+  console.log(client)
+  client.on('connect', () => {
+    console.log('connecting')
+    win.webContents.send('mqtt-status', `Connected to MQTT broker at ${uri}:${port}`);
+    client.subscribe('grumpybin/lines');
+    // Request initial state
+    requestMessage(client, {
+      line: "",
+      method: MessageMethod.GET,
+      status: MessageStatus.NONE,
+      type: MessageType.REQUEST,
+      key: -1
+    });
+  });
+  client.on('message', (topic, message) => {
+    if (topic === 'grumpybin/lines') {
+      win.webContents.send('mqtt-message', message.toString());
+    }
+  });
+}
 
 const createWindow = () => {
   win = new BrowserWindow({
@@ -18,41 +45,30 @@ const createWindow = () => {
 }
 
 function requestMessage(client, message) {
-  client.publish('grumpybin/lines', JSON.stringify(message))
-  client.publish('grumpybin/lines', JSON.stringify({
-    line: "",
-    method: MessageMethod.GET,
-    status: MessageStatus.NONE,
-    type: MessageType.REQUEST,
-    key: -1
-  }))
+  if (client) {
+    client.publish('grumpybin/lines', JSON.stringify(message))
+    client.publish('grumpybin/lines', JSON.stringify({
+      line: "",
+      method: MessageMethod.GET,
+      status: MessageStatus.NONE,
+      type: MessageType.REQUEST,
+      key: -1
+    }))
+  }
 }
 
 app.whenReady().then(() => {
   createWindow()
 
-  const client = mqtt.connect('mqtt://localhost:1883')
+  // Optionally connect to a default broker at startup:
+  // connectMqtt('localhost', 1883);
 
-  client.on('connect', () => {
-    win.webContents.send('mqtt-status', 'Connected to MQTT broker')
-    client.subscribe('grumpybin/lines')
-  })
-  client.on('message', (topic, message) => {
-    if (topic === 'grumpybin/lines') {
-      win.webContents.send('mqtt-message', message.toString())
-    }
-  })
+  ipcMain.on('connect-mqtt', (event, { uri, port }) => {
+    connectMqtt(uri, port);
+  });
 
   ipcMain.on('form-message', (event, message) => {
     requestMessage(client, message)
-  })
-
-  requestMessage(client, {
-    line: "",
-    method: MessageMethod.GET,
-    status: MessageStatus.NONE,
-    type: MessageType.REQUEST,
-    key: -1
   })
 })
 

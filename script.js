@@ -21,6 +21,14 @@ function setFieldStates() {
     }
 }
 
+const serverForm = document.getElementById('server');
+serverForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const uri = document.getElementById('uri').value;
+    const port = document.getElementById('port').value;
+    window.electronAPI.sendToMain('connect-mqtt', { uri, port });
+});
+
 // Set initial state
 window.addEventListener('DOMContentLoaded', () => {
     setFieldStates();
@@ -64,6 +72,7 @@ form.addEventListener('submit', (e) => {
 
 window.electronAPI.onMqttStatus((status) => {
     const statusElem = document.getElementById('status');
+    console.log(status)
     if (statusElem) statusElem.innerText = status;
 });
 
